@@ -1,0 +1,20 @@
+{
+  "name": "chomp"
+, "description": "Chomp many file to produce one."
+, "version": "0.0.1-alpha.1"
+, "keywords": ["stream", "filesystem", "chunk"]
+, "main": "./chomp.js"
+, "homepage": "https://github.com/aliem/chomp.git"
+, "author": "Lorenzo Giuliani"
+, "repository": {
+    "type": "git"
+  , "url": "https://github.com/aliem/chomp.git"
+  }
+, "main": "chomp.js"
+, "dependencies": {
+    "fast-list": "~ 1.0.2"
+  }
+, "licenses": [ 
+    { "type": "MIT", "url": "http://opensource.org/licenses/mit-license.html" }
+  ]
+}
