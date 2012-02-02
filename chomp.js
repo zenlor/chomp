@@ -1,10 +1,38 @@
-var fs = require('fs')
-  , FastList = require('fast-list');
+//     chomp 0.0.1 alpha 2
+//     (c) 2012 Lorenzo Giuliani
+//     Released under MIT license.
 
-var Chomp = module.exports = function () {
+var fs = require('fs')
+  , FastList = require('fast-list')
+  , isFunction = function(obj) {
+      return Object.prototype.toString.call(obj) == '[object Function]';
+    }
+  , debug = false
+  , dd = function() {
+      if (debug)
+        console.log.apply(arguments.callee, arguments);
+    };
+
+
+/**
+ * Base Object
+ * @param  {Boolean} debug    enables debug logs
+ * @return {[type]}
+ */
+var Chomp = module.exports = function (debug) {
   this.list = new FastList();
+  if (debug) {
+    debug = true;
+  }
 };
 
+/**
+ * append a new file path to the internal list
+ * if the file doesn't exists will callback the
+ * `Stat` error
+ * @param  {String}   chunk     file path
+ * @param  {Function} cb        Callback
+ */
 Chomp.prototype.push = function (chunk, cb) {
   var self = this;
   fs.stat(chunk, function (err) {
@@ -16,7 +44,13 @@ Chomp.prototype.push = function (chunk, cb) {
   });
 };
 
-Chomp.prototype.write = function (dest, every_callback, finally_callback) {
+/**
+ * Write the list of file chunks to the destination file
+ * @param  {String}   dest        destination file. *note* path must exist
+ * @param  {Function} chunk_cb    callback for every appended file
+ * @param  {Function} callback    callback called at the end or on error
+ */
+Chomp.prototype.write = function (dest, chunk_cb, callback) {
   var self = this;
 
   fs.stat(dest, function (err, stats) {
@@ -28,15 +62,38 @@ Chomp.prototype.write = function (dest, every_callback, finally_callback) {
       }
     };
 
-    self._write(dest, every_callback, finally_callback);
+
+    // Callback preparation
+    // 
+    if (isFunction(chunk_cb) && !callback) {
+      self.chunk_cb = dd;
+      self.callback = chunk_cb;
+    } else if (isFunction(chunk_cb)) {
+      self.chunk_cb = chunk_cb;
+    } else if (! isFunction(chunk_cb)) {
+      self.chunk_cb = dd;
+    } else if (isFunction(callback)) {
+      self.callback = callback;
+    } else {
+      self.callback = dd;
+    }
+
+    self.dest = fs.createWriteStream(dest, {
+      flags: 'a+'
+    });
+
+    self._write();
   });
 };
 
-Chomp.prototype._write = function (dest, every_callback, finally_callback) {
-  var list = this.list
-    , ws = fs.createWriteStream(dest, {
-        flags: 'a+'
-      });
+/**
+ * the real worker
+ * 
+ * @private
+ */
+Chomp.prototype._write = function () {
+  var self = this
+    , list = this.list;
 
   function write (rs) {
     var stream = fs.createReadStream(rs)
@@ -48,21 +105,19 @@ Chomp.prototype._write = function (dest, every_callback, finally_callback) {
       stream.destroy();
       ws.destroy();
 
-      if (every_callback)
-        every_callback(error);
-      if (finally_callback)
-        finally_callback(error);
+      self.chunk_cb(error, rs);
+      self.callback(error, rs);
     });
 
     stream.on("end", function() {
       var next = list.pop()
 
-      if (every_callback) every_callback(null, rs);
+      self.chunk_cb(null, rs);
 
       if (next) {
         write(next, ws);
       } else {
-        finally_callback(null, dest);
+        self.callback(null, dest);
       }
     });
   }

@@ -1,7 +1,7 @@
 {
   "name": "chomp"
 , "description": "Chomp many file to produce one."
-, "version": "0.0.1-alpha.1"
+, "version": "0.0.1-alpha.2"
 , "keywords": ["stream", "filesystem", "chunk"]
 , "main": "./chomp.js"
 , "homepage": "https://github.com/aliem/chomp.git"
