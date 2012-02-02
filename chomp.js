@@ -1,4 +1,4 @@
-//     chomp 0.0.1 alpha 2
+//     chomp 0.0.1 alpha 3
 //     (c) 2012 Lorenzo Giuliani
 //     Released under MIT license.
 
@@ -64,17 +64,15 @@ Chomp.prototype.write = function (dest, chunk_cb, callback) {
 
 
     // Callback preparation
-    // 
-    if (isFunction(chunk_cb) && !callback) {
+    //
+    if (isFunction(chunk_cb) && isFunction(callback)) {
+      self.chunk_cb = chunk_cb;
+      self.callback = callback;
+    } else if (isFunction(chunk_cb) && !callback) {
       self.chunk_cb = dd;
       self.callback = chunk_cb;
-    } else if (isFunction(chunk_cb)) {
-      self.chunk_cb = chunk_cb;
-    } else if (! isFunction(chunk_cb)) {
-      self.chunk_cb = dd;
-    } else if (isFunction(callback)) {
-      self.callback = callback;
     } else {
+      self.chunk_cb = dd;
       self.callback = dd;
     }
 
@@ -99,7 +97,7 @@ Chomp.prototype._write = function () {
     var stream = fs.createReadStream(rs)
       , err = 0;
 
-    stream.pipe(ws, {end: false})
+    stream.pipe(self.dest, {end: false})
 
     stream.on('error', function (error) {
       stream.destroy();
@@ -115,9 +113,9 @@ Chomp.prototype._write = function () {
       self.chunk_cb(null, rs);
 
       if (next) {
-        write(next, ws);
+        write(next);
       } else {
-        self.callback(null, dest);
+        self.callback(null, self.dest);
       }
     });
   }
